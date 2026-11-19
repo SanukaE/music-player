@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-
-export const dynamic = "force-dynamic";
+import { connection } from "next/server";
 
 export async function GET() {
+  await connection();
+
   return NextResponse.json({
     recaptchaSiteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
     appwriteEndpoint:
