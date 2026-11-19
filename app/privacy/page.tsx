@@ -331,9 +331,7 @@ export default function PrivacyPolicyPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-zinc-400">
             <Disc3 className="w-4 h-4 text-emerald-400" />
-            <span>
-              © {new Date().getFullYear()} Music Player. All rights reserved.
-            </span>
+            <span>© 2026 Music Player. All rights reserved.</span>
           </div>
           <nav className="flex items-center gap-6 text-sm text-zinc-400">
             <Link
