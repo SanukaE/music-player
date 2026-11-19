@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { account } from "@/lib/appwrite";
@@ -59,7 +59,7 @@ interface AlbumData {
   songs: SongItem[];
 }
 
-export default function AlbumPlayerPage() {
+function AlbumPlayerContent() {
   const params = useParams<{ id: string }>();
   const albumId = params?.id;
 
@@ -1295,5 +1295,22 @@ export default function AlbumPlayerPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AlbumPlayerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#09090B] text-zinc-100 flex items-center justify-center">
+          <div className="flex items-center gap-3 text-sm text-zinc-400">
+            <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+            Loading album...
+          </div>
+        </div>
+      }
+    >
+      <AlbumPlayerContent />
+    </Suspense>
   );
 }
