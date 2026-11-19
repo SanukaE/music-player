@@ -28,6 +28,10 @@ type AvailabilityState =
 export default function SignUpPage() {
   const router = useRouter();
 
+  const [siteKey, setSiteKey] = useState(
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
+  );
+
   // Form fields
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -49,6 +53,16 @@ export default function SignUpPage() {
   // Submission states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (siteKey) return;
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.recaptchaSiteKey) setSiteKey(data.recaptchaSiteKey);
+      })
+      .catch(() => {});
+  }, [siteKey]);
 
   // ================= LIVE USERNAME AVAILABILITY =================
   useEffect(() => {
@@ -444,14 +458,21 @@ export default function SignUpPage() {
               {/* ---------- CAPTCHA ---------- */}
               <div>
                 <div className="flex justify-center overflow-hidden rounded-xl bg-zinc-950 border border-zinc-800 py-3">
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-                    theme="dark"
-                    onChange={(token) => setCaptchaToken(token)}
-                    onExpired={() => setCaptchaToken(null)}
-                    onErrored={() => setCaptchaToken(null)}
-                  />
+                  {siteKey ? (
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={siteKey}
+                      theme="dark"
+                      onChange={(token) => setCaptchaToken(token)}
+                      onExpired={() => setCaptchaToken(null)}
+                      onErrored={() => setCaptchaToken(null)}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 py-4 text-xs text-zinc-400">
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                      Loading security check...
+                    </div>
+                  )}
                 </div>
               </div>
 

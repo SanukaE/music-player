@@ -40,6 +40,10 @@ type VisibilityFilter = "all" | "public" | "private";
 export default function MyAlbumsPage() {
   const router = useRouter();
 
+  const [siteKey, setSiteKey] = useState(
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
+  );
+
   // Auth & Albums state
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +74,16 @@ export default function MyAlbumsPage() {
   const deleteRecaptchaRef = useRef<ReCAPTCHA>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (siteKey) return;
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.recaptchaSiteKey) setSiteKey(data.recaptchaSiteKey);
+      })
+      .catch(() => {});
+  }, [siteKey]);
 
   // 1. Verify session & load user's albums
   useEffect(() => {
@@ -748,15 +762,22 @@ export default function MyAlbumsPage() {
             </p>
 
             {/* Google reCAPTCHA required before deleting */}
-            <div className="mt-5 flex justify-center overflow-hidden rounded-xl bg-zinc-950 border border-zinc-800 py-3">
-              <ReCAPTCHA
-                ref={deleteRecaptchaRef}
-                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-                theme="dark"
-                onChange={(token) => setDeleteCaptchaToken(token)}
-                onExpired={() => setDeleteCaptchaToken(null)}
-                onErrored={() => setDeleteCaptchaToken(null)}
-              />
+            <div className="flex justify-center overflow-hidden rounded-xl bg-zinc-950 border border-zinc-800 py-3">
+              {siteKey ? (
+                <ReCAPTCHA
+                  ref={deleteRecaptchaRef}
+                  sitekey={siteKey}
+                  theme="dark"
+                  onChange={(token) => setDeleteCaptchaToken(token)}
+                  onExpired={() => setDeleteCaptchaToken(null)}
+                  onErrored={() => setDeleteCaptchaToken(null)}
+                />
+              ) : (
+                <div className="flex items-center gap-2 py-4 text-xs text-zinc-400">
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                  Loading security check...
+                </div>
+              )}
             </div>
 
             {deleteError && (

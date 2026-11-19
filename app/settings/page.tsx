@@ -34,6 +34,10 @@ function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [siteKey, setSiteKey] = useState(
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
+  );
+
   // Appwrite verification callback params
   const verifyUserId = searchParams.get("userId");
   const verifySecret = searchParams.get("secret");
@@ -89,6 +93,16 @@ function SettingsContent() {
   const deleteRecaptchaRef = useRef<ReCAPTCHA>(null);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (siteKey) return;
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.recaptchaSiteKey) setSiteKey(data.recaptchaSiteKey);
+      })
+      .catch(() => {});
+  }, [siteKey]);
 
   // Load current Appwrite session
   useEffect(() => {
@@ -1035,14 +1049,21 @@ function SettingsContent() {
 
               {/* 4. Google reCAPTCHA */}
               <div className="flex justify-center overflow-hidden rounded-xl bg-zinc-950 border border-zinc-800 py-3">
-                <ReCAPTCHA
-                  ref={deleteRecaptchaRef}
-                  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-                  theme="dark"
-                  onChange={(token) => setDeleteCaptchaToken(token)}
-                  onExpired={() => setDeleteCaptchaToken(null)}
-                  onErrored={() => setDeleteCaptchaToken(null)}
-                />
+                {siteKey ? (
+                  <ReCAPTCHA
+                    ref={deleteRecaptchaRef}
+                    sitekey={siteKey}
+                    theme="dark"
+                    onChange={(token) => setDeleteCaptchaToken(token)}
+                    onExpired={() => setDeleteCaptchaToken(null)}
+                    onErrored={() => setDeleteCaptchaToken(null)}
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 py-4 text-xs text-zinc-400">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                    Loading security check...
+                  </div>
+                )}
               </div>
 
               {deleteError && (

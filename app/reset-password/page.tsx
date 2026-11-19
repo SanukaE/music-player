@@ -23,6 +23,10 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [siteKey, setSiteKey] = useState(
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "",
+  );
+
   // Appwrite appends ?userId=...&secret=... to the recovery email link
   const userId = searchParams.get("userId");
   const secret = searchParams.get("secret");
@@ -47,6 +51,16 @@ function ResetPasswordContent() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (siteKey) return;
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.recaptchaSiteKey) setSiteKey(data.recaptchaSiteKey);
+      })
+      .catch(() => {});
+  }, [siteKey]);
 
   // Redirect already logged-in users unless they arrived via a recovery link
   useEffect(() => {
@@ -407,14 +421,21 @@ function ResetPasswordContent() {
                   <div>
                     {/* ---------- GOOGLE RECAPTCHA ---------- */}
                     <div className="flex justify-center overflow-hidden rounded-xl bg-zinc-950 border border-zinc-800 py-3">
-                      <ReCAPTCHA
-                        ref={recaptchaRef}
-                        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-                        theme="dark"
-                        onChange={(token) => setCaptchaToken(token)}
-                        onExpired={() => setCaptchaToken(null)}
-                        onErrored={() => setCaptchaToken(null)}
-                      />
+                      {siteKey ? (
+                        <ReCAPTCHA
+                          ref={recaptchaRef}
+                          sitekey={siteKey}
+                          theme="dark"
+                          onChange={(token) => setCaptchaToken(token)}
+                          onExpired={() => setCaptchaToken(null)}
+                          onErrored={() => setCaptchaToken(null)}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2 py-4 text-xs text-zinc-400">
+                          <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                          Loading security check...
+                        </div>
+                      )}
                     </div>
                   </div>
 
