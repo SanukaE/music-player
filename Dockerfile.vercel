@@ -1,7 +1,10 @@
 FROM node:20-slim
 
-# Install Python 3 (with `python` symlink) and FFmpeg for yt-dlp MP3 extraction
-RUN apt-get update && apt-get install -y python3 python-is-python3 ffmpeg && rm -rf /var/lib/apt/lists/*
+# Install Python 3, FFmpeg, and curl, then install yt-dlp globally
+RUN apt-get update && apt-get install -y python3 python-is-python3 ffmpeg curl && \
+    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
+    chmod a+rx /usr/local/bin/yt-dlp && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY package*.json ./

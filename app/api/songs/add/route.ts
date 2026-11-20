@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Client, Databases, Storage, ID } from "node-appwrite";
 import { InputFile } from "node-appwrite/file";
-import YTDlpWrap from "yt-dlp-exec";
+import { create as createYTDlp } from "yt-dlp-exec";
+import fsSync from "fs";
 import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
@@ -10,6 +11,12 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
+
+const ytDlpBinary = fsSync.existsSync("/usr/local/bin/yt-dlp")
+  ? "/usr/local/bin/yt-dlp"
+  : "yt-dlp";
+
+const YTDlpWrap = createYTDlp(ytDlpBinary);
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB strict limit
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
