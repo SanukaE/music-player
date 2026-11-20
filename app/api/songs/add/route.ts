@@ -10,6 +10,8 @@ import os from "os";
 import { execFile } from "child_process";
 import { promisify } from "util";
 
+let tempCookiesPath: string | null = null;
+
 const execFileAsync = promisify(execFile);
 
 const ytDlpBinary = fsSync.existsSync("/usr/local/bin/yt-dlp")
@@ -226,15 +228,38 @@ export async function POST(request: NextRequest) {
         `ytdlp-${uniqueId}.%(ext)s`,
       );
       tempFilePath = path.join(os.tmpdir(), `ytdlp-${uniqueId}.mp3`);
+      let tempCookiesPath: string | null = null;
 
-      await YTDlpWrap(sourceUrl, {
-        extractAudio: true,
-        audioFormat: "mp3",
-        audioQuality: 5, // Compact bitrate to help stay within 5MB
-        maxFilesize: "5M",
-        noPlaylist: true,
-        output: outputTemplate,
-      });
+      try {
+        const ytdlpOptions: Record<string, any> = {
+          extractAudio: true,
+          audioFormat: "mp3",
+          audioQuality: 5,
+          maxFilesize: "5M",
+          noPlaylist: true,
+          jsRuntimes: "node",
+          output: outputTemplate,
+        };
+
+        if (process.env.YOUTUBE_COOKIES_BASE64) {
+          tempCookiesPath = path.join(
+            os.tmpdir(),
+            `yt-cookies-${Date.now()}.txt`,
+          );
+          const decodedCookies = Buffer.from(
+            process.env.YOUTUBE_COOKIES_BASE64,
+            "base64",
+          ).toString("utf-8");
+          await fs.writeFile(tempCookiesPath, decodedCookies, "utf-8");
+          ytdlpOptions.cookies = tempCookiesPath;
+        }
+
+        await YTDlpWrap(sourceUrl, ytdlpOptions);
+      } finally {
+        if (tempCookiesPath) {
+          await fs.unlink(tempCookiesPath).catch(() => {});
+        }
+      }
 
       const stats = await fs.stat(tempFilePath).catch(() => null);
       if (!stats) {
