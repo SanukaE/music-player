@@ -237,21 +237,24 @@ export async function POST(request: NextRequest) {
           audioQuality: 5,
           maxFilesize: "5M",
           noPlaylist: true,
-          jsRuntimes: "node",
+          jsRuntimes: `node:${process.execPath}`,
           output: outputTemplate,
         };
 
         if (process.env.YOUTUBE_COOKIES_BASE64) {
-          tempCookiesPath = path.join(
-            os.tmpdir(),
-            `yt-cookies-${Date.now()}.txt`,
-          );
           const decodedCookies = Buffer.from(
             process.env.YOUTUBE_COOKIES_BASE64,
             "base64",
           ).toString("utf-8");
-          await fs.writeFile(tempCookiesPath, decodedCookies, "utf-8");
-          ytdlpOptions.cookies = tempCookiesPath;
+
+          if (decodedCookies.includes(".youtube.com")) {
+            tempCookiesPath = path.join(
+              os.tmpdir(),
+              `yt-cookies-${Date.now()}.txt`,
+            );
+            await fs.writeFile(tempCookiesPath, decodedCookies, "utf-8");
+            ytdlpOptions.cookies = tempCookiesPath;
+          }
         }
 
         await YTDlpWrap(sourceUrl, ytdlpOptions);
