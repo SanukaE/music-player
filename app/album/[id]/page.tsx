@@ -21,7 +21,6 @@ import {
   ArrowUp,
   ArrowDown,
   Trash2,
-  Plus,
   Search,
   User,
   Globe,
@@ -31,7 +30,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Music,
-  Link2,
   Upload,
   UserPlus,
 } from "lucide-react";
@@ -96,16 +94,14 @@ function AlbumPlayerContent() {
     text: string;
   } | null>(null);
 
-  // Creator Song Search & Upload inside Edit Mode
+  // Creator Song Search & MP3 Upload inside Edit Mode
   const [songSearchQuery, setSongSearchQuery] = useState("");
   const [songSearchResults, setSongSearchResults] = useState<SongItem[]>([]);
   const [isSearchingSongs, setIsSearchingSongs] = useState(false);
   const [showAddNewSongForm, setShowAddNewSongForm] = useState(false);
-  const [uploadMode, setUploadMode] = useState<"url" | "file">("url");
   const [newSongTitle, setNewSongTitle] = useState("");
   const [newSongArtistInput, setNewSongArtistInput] = useState("");
   const [newSongArtists, setNewSongArtists] = useState<string[]>([]);
-  const [newSongUrl, setNewSongUrl] = useState("");
   const [newSongFile, setNewSongFile] = useState<File | null>(null);
   const [isUploadingNewSong, setIsUploadingNewSong] = useState(false);
   const [uploadSongError, setUploadSongError] = useState<string | null>(null);
@@ -365,17 +361,17 @@ function AlbumPlayerContent() {
       return;
     }
 
+    if (!newSongFile) {
+      setUploadSongError("Please select an MP3 file (max 5MB).");
+      return;
+    }
+
     setIsUploadingNewSong(true);
     try {
       const formData = new FormData();
-      formData.append("mode", uploadMode);
       formData.append("title", newSongTitle.trim());
-      formData.append("artists", JSON.stringify(finalArtists));
-      if (uploadMode === "url") {
-        formData.append("url", newSongUrl.trim());
-      } else if (newSongFile) {
-        formData.append("file", newSongFile);
-      }
+      formData.append("artists", finalArtists.join(","));
+      formData.append("file", newSongFile);
 
       const res = await fetch("/api/songs/add", {
         method: "POST",
@@ -393,7 +389,6 @@ function AlbumPlayerContent() {
       setNewSongTitle("");
       setNewSongArtistInput("");
       setNewSongArtists([]);
-      setNewSongUrl("");
       setNewSongFile(null);
       setShowAddNewSongForm(false);
     } catch {
@@ -838,12 +833,15 @@ function AlbumPlayerContent() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setShowAddNewSongForm((prev) => !prev)}
+                    onClick={() => {
+                      setShowAddNewSongForm((prev) => !prev);
+                      setUploadSongError(null);
+                    }}
                     className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 cursor-pointer"
                   >
                     {showAddNewSongForm
                       ? "Hide Upload Form"
-                      : "+ Upload New Song via URL / MP3"}
+                      : "+ Upload New MP3"}
                   </button>
                 </div>
 
@@ -910,32 +908,12 @@ function AlbumPlayerContent() {
                   </div>
                 )}
 
-                {/* Optional Inline New Song Uploader */}
+                {/* Inline New MP3 Song Uploader */}
                 {showAddNewSongForm && (
                   <div className="pt-3 border-t border-zinc-800 space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setUploadMode("url")}
-                        className={`py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
-                          uploadMode === "url"
-                            ? "bg-emerald-500 text-zinc-950"
-                            : "bg-zinc-900 text-zinc-400"
-                        }`}
-                      >
-                        <Link2 className="w-3.5 h-3.5" /> By URL (yt-dlp)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUploadMode("file")}
-                        className={`py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
-                          uploadMode === "file"
-                            ? "bg-emerald-500 text-zinc-950"
-                            : "bg-zinc-900 text-zinc-400"
-                        }`}
-                      >
-                        <Upload className="w-3.5 h-3.5" /> MP3 (Max 5MB)
-                      </button>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                      <Upload className="w-3.5 h-3.5" />
+                      Upload New MP3 (Max 5MB)
                     </div>
 
                     <input
@@ -951,6 +929,19 @@ function AlbumPlayerContent() {
                         type="text"
                         value={newSongArtistInput}
                         onChange={(e) => setNewSongArtistInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === ",") {
+                            e.preventDefault();
+                            if (newSongArtistInput.trim()) {
+                              setNewSongArtists((prev) =>
+                                prev.includes(newSongArtistInput.trim())
+                                  ? prev
+                                  : [...prev, newSongArtistInput.trim()],
+                              );
+                              setNewSongArtistInput("");
+                            }
+                          }
+                        }}
                         placeholder="Artist name"
                         className="flex-1 rounded-xl bg-[#121215] border border-zinc-800 px-3 py-2 text-xs text-white"
                       />
@@ -958,10 +949,11 @@ function AlbumPlayerContent() {
                         type="button"
                         onClick={() => {
                           if (newSongArtistInput.trim()) {
-                            setNewSongArtists((prev) => [
-                              ...prev,
-                              newSongArtistInput.trim(),
-                            ]);
+                            setNewSongArtists((prev) =>
+                              prev.includes(newSongArtistInput.trim())
+                                ? prev
+                                : [...prev, newSongArtistInput.trim()],
+                            );
                             setNewSongArtistInput("");
                           }
                         }}
@@ -972,29 +964,65 @@ function AlbumPlayerContent() {
                       </button>
                     </div>
 
-                    {uploadMode === "url" ? (
-                      <input
-                        type="url"
-                        value={newSongUrl}
-                        onChange={(e) => setNewSongUrl(e.target.value)}
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        className="w-full rounded-xl bg-[#121215] border border-zinc-800 px-3 py-2 text-xs font-mono text-white"
-                      />
-                    ) : (
+                    {newSongArtists.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {newSongArtists.map((artist) => (
+                          <span
+                            key={artist}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+                          >
+                            {artist}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setNewSongArtists((prev) =>
+                                  prev.filter((a) => a !== artist),
+                                )
+                              }
+                              className="hover:text-white cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div>
                       <input
                         type="file"
                         accept=".mp3,audio/mpeg"
                         onChange={(e) => {
+                          setUploadSongError(null);
                           const f = e.target.files?.[0] || null;
-                          if (f && f.size > MAX_MP3_BYTES) {
+                          if (!f) {
+                            setNewSongFile(null);
+                            return;
+                          }
+                          if (
+                            !f.name.toLowerCase().endsWith(".mp3") &&
+                            f.type !== "audio/mpeg"
+                          ) {
+                            setUploadSongError("Only .mp3 files are allowed.");
+                            e.target.value = "";
+                            return;
+                          }
+                          if (f.size > MAX_MP3_BYTES) {
                             setUploadSongError("MP3 file exceeds 5MB limit.");
+                            e.target.value = "";
                             return;
                           }
                           setNewSongFile(f);
                         }}
-                        className="w-full text-xs text-zinc-300"
+                        className="w-full rounded-xl bg-[#121215] border border-zinc-800 px-3 py-2 text-xs text-zinc-300 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/15 file:text-emerald-300 hover:file:bg-emerald-500/25 cursor-pointer"
                       />
-                    )}
+                      {newSongFile && (
+                        <p className="mt-1 text-[11px] text-emerald-400">
+                          Selected: {newSongFile.name} (
+                          {(newSongFile.size / (1024 * 1024)).toFixed(2)} MB)
+                        </p>
+                      )}
+                    </div>
 
                     {uploadSongError && (
                       <p className="text-xs text-red-400">{uploadSongError}</p>
@@ -1004,8 +1032,11 @@ function AlbumPlayerContent() {
                       type="button"
                       disabled={isUploadingNewSong}
                       onClick={handleUploadNewSongToEdit}
-                      className="px-4 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-semibold text-xs cursor-pointer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs cursor-pointer disabled:opacity-50"
                     >
+                      {isUploadingNewSong && (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      )}
                       {isUploadingNewSong
                         ? "Scanning & Uploading..."
                         : "Upload & Add to Album"}

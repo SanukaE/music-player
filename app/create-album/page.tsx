@@ -15,7 +15,6 @@ import {
   Check,
   Trash2,
   Upload,
-  Link2,
   Music,
   UserPlus,
   X,
@@ -62,11 +61,9 @@ export default function CreateAlbumPage() {
 
   // Add new song modal/drawer state
   const [showAddSongForm, setShowAddSongForm] = useState(false);
-  const [uploadMode, setUploadMode] = useState<"url" | "file">("url");
   const [newSongTitle, setNewSongTitle] = useState("");
   const [artistInput, setArtistInput] = useState("");
   const [artists, setArtists] = useState<string[]>([]);
-  const [songUrl, setSongUrl] = useState("");
   const [songFile, setSongFile] = useState<File | null>(null);
   const [isUploadingSong, setIsUploadingSong] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -268,12 +265,7 @@ export default function CreateAlbumPage() {
       return;
     }
 
-    if (uploadMode === "url" && !songUrl.trim()) {
-      setUploadError("Please enter a song URL to download.");
-      return;
-    }
-
-    if (uploadMode === "file" && !songFile) {
+    if (!songFile) {
       setUploadError("Please select an MP3 file (max 5MB).");
       return;
     }
@@ -282,15 +274,9 @@ export default function CreateAlbumPage() {
 
     try {
       const formData = new FormData();
-      formData.append("mode", uploadMode);
       formData.append("title", newSongTitle.trim());
-      formData.append("artists", JSON.stringify(finalArtists));
-
-      if (uploadMode === "url") {
-        formData.append("url", songUrl.trim());
-      } else if (songFile) {
-        formData.append("file", songFile);
-      }
+      formData.append("artists", finalArtists.join(","));
+      formData.append("file", songFile);
 
       const res = await fetch("/api/songs/add", {
         method: "POST",
@@ -314,7 +300,6 @@ export default function CreateAlbumPage() {
       setNewSongTitle("");
       setArtistInput("");
       setArtists([]);
-      setSongUrl("");
       setSongFile(null);
       setShowAddSongForm(false);
       setUploadSuccess(
@@ -440,7 +425,7 @@ export default function CreateAlbumPage() {
           </h1>
           <p className="mt-2 text-sm text-zinc-400">
             {step === 1
-              ? `Search our library to preview and add up to ${MAX_ALBUM_SONGS} songs, or upload a new track via URL or MP3.`
+              ? `Search our library to preview and add up to ${MAX_ALBUM_SONGS} songs, or upload a new MP3 track.`
               : "Set your album title, review the auto-collected artists, and choose whether to make it public or private."}
           </p>
         </div>
@@ -590,8 +575,7 @@ export default function CreateAlbumPage() {
                           our servers.
                         </p>
                         <p className="text-xs text-zinc-500 mt-1">
-                          Add it below using a direct URL or an MP3 file (max
-                          5MB).
+                          Upload it below using an MP3 file (max 5MB).
                         </p>
                         <button
                           type="button"
@@ -602,7 +586,7 @@ export default function CreateAlbumPage() {
                           className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs transition-colors cursor-pointer"
                         >
                           <Plus className="w-4 h-4" />
-                          Add New Song to Server
+                          Upload New MP3 to Server
                         </button>
                       </div>
                     )}
@@ -610,21 +594,21 @@ export default function CreateAlbumPage() {
                 )}
               </section>
 
-              {/* ADD NEW SONG BY URL OR MP3 */}
+              {/* UPLOAD NEW SONG VIA MP3 */}
               {showAddSongForm && (
                 <section className="rounded-2xl bg-[#121215] border border-emerald-500/30 p-6 shadow-2xl">
                   <div className="flex items-start justify-between gap-4 mb-5">
                     <div>
                       <span className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-emerald-400 mb-1">
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        Virus-Scanned Server Upload
+                        Virus-Scanned MP3 Upload
                       </span>
                       <h2 className="text-lg font-bold text-white">
-                        Add a New Song
+                        Upload a New Song
                       </h2>
                       <p className="text-xs text-zinc-400">
-                        Saved to Appwrite Storage (`6afbfb0000103d4c784d`) and
-                        indexed in the Songs database.
+                        Saved to Appwrite Storage and indexed in the Songs
+                        database.
                       </p>
                     </div>
                     <button
@@ -633,39 +617,6 @@ export default function CreateAlbumPage() {
                       className="text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
                     >
                       <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-zinc-950 border border-zinc-800 mb-5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUploadMode("url");
-                        setUploadError(null);
-                      }}
-                      className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        uploadMode === "url"
-                          ? "bg-emerald-500 text-zinc-950"
-                          : "text-zinc-400 hover:text-zinc-200"
-                      }`}
-                    >
-                      <Link2 className="w-4 h-4" />
-                      By Song URL (yt-dlp)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUploadMode("file");
-                        setUploadError(null);
-                      }}
-                      className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                        uploadMode === "file"
-                          ? "bg-emerald-500 text-zinc-950"
-                          : "text-zinc-400 hover:text-zinc-200"
-                      }`}
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload MP3 (Max 5MB)
                     </button>
                   </div>
 
@@ -731,43 +682,27 @@ export default function CreateAlbumPage() {
                       )}
                     </div>
 
-                    {uploadMode === "url" ? (
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                          Song URL (YouTube, SoundCloud, etc.)
-                        </label>
-                        <input
-                          type="url"
-                          required
-                          value={songUrl}
-                          onChange={(e) => setSongUrl(e.target.value)}
-                          placeholder="https://www.youtube.com/watch?v=..."
-                          className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3.5 py-2.5 text-sm font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/60"
-                        />
-                        <p className="mt-1.5 text-[11px] text-zinc-500">
-                          Downloaded via yt-dlp on the server, virus-checked,
-                          and capped at 5MB.
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                          MP3 Audio File (Max 5MB)
-                        </label>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                        MP3 Audio File (Max 5MB)
+                      </label>
+                      <div className="relative">
                         <input
                           type="file"
                           accept=".mp3,audio/mpeg"
+                          required
                           onChange={handleFileChange}
                           className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3.5 py-2 text-xs text-zinc-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/15 file:text-emerald-300 hover:file:bg-emerald-500/25 cursor-pointer"
                         />
-                        {songFile && (
-                          <p className="mt-1.5 text-xs text-emerald-400">
-                            Selected: {songFile.name} (
-                            {(songFile.size / (1024 * 1024)).toFixed(2)} MB)
-                          </p>
-                        )}
                       </div>
-                    )}
+                      {songFile && (
+                        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-400">
+                          <Upload className="w-3.5 h-3.5" />
+                          Selected: {songFile.name} (
+                          {(songFile.size / (1024 * 1024)).toFixed(2)} MB)
+                        </p>
+                      )}
+                    </div>
 
                     {uploadError && (
                       <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-xs text-red-300">
