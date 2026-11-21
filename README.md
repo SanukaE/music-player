@@ -1,6 +1,6 @@
 # Music Player
 
-A full-stack Next.js and Appwrite web application for curating, searching, and sharing music albums via unique UUIDs. Built with TypeScript, Tailwind CSS, Appwrite Auth/Databases/Storage, Google reCAPTCHA, `yt-dlp`, and Nodemailer.
+A full-stack Next.js and Appwrite web application for curating, searching, and sharing music albums via unique UUIDs. Built with TypeScript, Tailwind CSS, Appwrite Auth/Databases/Storage, Google reCAPTCHA, and Nodemailer.
 
 ---
 
@@ -9,7 +9,7 @@ A full-stack Next.js and Appwrite web application for curating, searching, and s
 - **Album Discovery & UUID Lookup:** Search public albums by title, artist, creator username, or paste an Album UUID directly into the search bar. Private albums are automatically filtered out unless viewed by their creator.
 - **2-Step Album Studio (Up to 25 Songs):**
   - Search existing tracks stored on the server with inline audio previews before adding them to a draft album.
-  - Upload missing tracks via **MP3 file upload (5 MB max)** or **URL audio extraction (`yt-dlp`)** with multi-artist tagging.
+  - Upload missing tracks via **MP3 file upload (5 MB max)** with multi-artist tagging.
   - Multi-layer security and magic-byte virus scanning before any file is written to Appwrite Storage.
   - Auto-populates album artists from selected tracks and lets creators choose between **Public** and **Private** visibility.
 - **Full Album Audio Player & Creator Controls:**
@@ -31,7 +31,6 @@ A full-stack Next.js and Appwrite web application for curating, searching, and s
 - **Framework:** Next.js (App Router), React, TypeScript
 - **Styling:** Tailwind CSS, Lucide Icons
 - **Backend & Storage:** Appwrite (`appwrite` client SDK & `node-appwrite` server SDK)
-- **Audio Extraction:** `yt-dlp-exec` & `ffmpeg`
 - **Security:** Google reCAPTCHA v2 (`react-google-recaptcha`), MP3 magic-byte & executable header inspection, optional ClamAV / VirusTotal hash checks
 - **Emails:** Nodemailer (SMTP)
 
@@ -42,17 +41,8 @@ A full-stack Next.js and Appwrite web application for curating, searching, and s
 Before running the project locally, make sure you have:
 
 1. **Node.js** (v18 or newer)
-2. **Python 3 & `ffmpeg`** installed on your machine (required by `yt-dlp-exec` for extracting and converting URL audio to MP3):
-   - **macOS (Homebrew):**
-     ```bash
-     brew install python ffmpeg yt-dlp
-     ```
-   - **Ubuntu / Debian:**
-     ```bash
-     sudo apt update && sudo apt install -y python3 ffmpeg
-     ```
-3. An **Appwrite Cloud** or self-hosted Appwrite project.
-4. **Google reCAPTCHA v2 ("I'm not a robot" Checkbox)** site and secret keys.
+2. An **Appwrite Cloud** or self-hosted Appwrite project.
+3. **Google reCAPTCHA v2 ("I'm not a robot" Checkbox)** site and secret keys.
 
 ---
 
@@ -99,7 +89,7 @@ Create a database and storage bucket in your Appwrite Console matching the schem
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/your-username/music-player.git](https://github.com/your-username/music-player.git)
+git clone [https://github.com/SanukaE/music-player.git](https://github.com/SanukaE/music-player.git)
 cd music-player
 ```
 
@@ -108,8 +98,6 @@ cd music-player
 ```bash
 npm install
 ```
-
-(If `yt-dlp-exec` fails its post-install Python check on macOS, ensure `python` resolves to `python3` or run `npm install yt-dlp-exec --ignore-scripts` with `yt-dlp` installed globally via Homebrew.)
 
 ### 3. Configure Environment Variables
 
